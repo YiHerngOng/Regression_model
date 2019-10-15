@@ -70,7 +70,7 @@ def linear_regression_sklearn(x, y):
 
 
 class Linear_Model():
-	def __init__(self, x, y, epsilon, Lambda):
+	def __init__(self, x, y, epsilon=0.5, Lambda=0.01):
 		# x is (M, N) matrix, y is (1, N) matrix
 		self.x_train, self.x_test, self.y_train, self.y_test = train_test_split(x, y, test_size=1/3, random_state=0)
 		self.epsilon = epsilon
@@ -81,16 +81,22 @@ class Linear_Model():
 	'''	
 	def linear_regression(self):
 		# initialize w with random numbers using numpy
-		w = np.random.rand(len(self.x_train.shape[1]))
 		
+		w = np.random.rand(self.x_train.shape[1])
+		ws = np.zeros((self.x_train.shape[0], self.x_train.shape[1]))
+		ws = ws + w
+		self.x_train_t = np.transpose(self.x_train)
+	
 		while True:
 			# Get derivative of sum or squared error 
-			self.sse_grad = (w * self.x_train - self.y_train)*self.x_train
+			self.sse_grad = (np.sum(np.dot(ws, self.x_train_t)[0] - self.y_train))*self.x_train
+			pdb.set_trace()
 			# update weights (parameters)
 			w -= self.Lambda * self.sse_grad
 			# check if gradient of sse converges
 			if np.linalg.norm(self.sse_grad) <= self.epsilon:
 				break
+		return w
 		
 	'''
 	Ridge regression (L2 regularization)
@@ -108,7 +114,17 @@ class Linear_Model():
 			if np.linalg.norm(self.sse_grad) <= self.epsilon:
 				break		
 		
+		return w
 	
+	def prediction(self, w):
+		count = 0
+		for i in range(len(self.y_test)):
+			pred = w * self.x_test[i]
+			if abs(pred - self.y_test[i]) < 0.01:
+				count += 1
+			
+		return count / len(self.y_test)
+			
 
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser()
@@ -122,5 +138,7 @@ if __name__ == '__main__':
 	# linear_regression_sklearn(x, y)
 
 	# Fit a linear model using written gradient descent algorithm
+	linear_model = Linear_Model(x, y, 0.01, 0.001)
+	linear_model.linear_regression()
 	
 
