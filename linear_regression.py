@@ -82,15 +82,23 @@ class Linear_Model():
 	def linear_regression(self):
 		# initialize w with random numbers using numpy
 		
-		w = np.random.rand(self.x_train.shape[1])
+		w = np.random.rand(1, self.x_train.shape[1])
 		ws = np.zeros((self.x_train.shape[0], self.x_train.shape[1]))
 		ws = ws + w
 		self.x_train_t = np.transpose(self.x_train)
 	
 		while True:
 			# Get derivative of sum or squared error 
-			self.sse_grad = (np.sum(np.dot(ws, self.x_train_t)[0] - self.y_train))*self.x_train
+			loss = np.dot(w, self.x_train_t) - self.y_train
+
+			self.sse_grad = np.zeros(self.x_train.shape[1])
+			for i in range(self.x_train.shape[0]):
+				pdb.set_trace()
+				self.sse_grad += loss[0][i] * self.x_train[i]
+								
+			print(np.linalg.norm(self.sse_grad))
 			pdb.set_trace()
+
 			# update weights (parameters)
 			w -= self.Lambda * self.sse_grad
 			# check if gradient of sse converges
@@ -138,7 +146,7 @@ if __name__ == '__main__':
 	# linear_regression_sklearn(x, y)
 
 	# Fit a linear model using written gradient descent algorithm
-	linear_model = Linear_Model(x, y, 0.01, 0.001)
+	linear_model = Linear_Model(x, y, 0.01, 0.0)
 	linear_model.linear_regression()
 	
 
