@@ -24,9 +24,22 @@ def import_data(file):
 	cols.remove("Serial No.") # remove serial no. because there is no correlation
 	# x = np.array(data["GRE Score"]) # passed in only GRE score set as inputs
 	x = np.array(data[cols]) # passed in all columns 
+	norm_x = normalization(x)
+	# x = np.transpose(x)
+	# norm_x = x / np.linalg.norm(x, ord=1, axis=1, keepdims=True)
 	y = np.array(data["Chance of Admit "]) # get label data "price"
-	return x, y
+	# pdb.set_trace()
+	return norm_x, y
 
+def normalization(x):
+	norm_x = x[:]
+	for i in range(norm_x.shape[1]):
+		feature_max = np.amax(norm_x[:, i])
+		feature_min = np.amin(norm_x[:, i])
+		for j in range(norm_x.shape[0]):
+			norm_x[j, i] = (norm_x[j, i] - feature_min) / (feature_max - feature_min)
+	
+	return norm_x
 '''
 Simple linear regression that import LinearRegression Model from sklearn library
 '''
@@ -93,11 +106,11 @@ class Linear_Model():
 
 			self.sse_grad = np.zeros(self.x_train.shape[1])
 			for i in range(self.x_train.shape[0]):
-				pdb.set_trace()
+				# pdb.set_trace()
 				self.sse_grad += loss[0][i] * self.x_train[i]
 								
-			print(np.linalg.norm(self.sse_grad))
-			pdb.set_trace()
+			# print(np.linalg.norm(self.sse_grad))
+			# pdb.set_trace()
 
 			# update weights (parameters)
 			w -= self.Lambda * self.sse_grad
@@ -111,19 +124,31 @@ class Linear_Model():
 	'''
 	def ridge_regression(self):
 		# initialize w with random numbers using numpy
-		w = np.random.rand(len(self.x_train.shape[1]))
 		
+		w = np.random.rand(1, self.x_train.shape[1])
+		ws = np.zeros((self.x_train.shape[0], self.x_train.shape[1]))
+		ws = ws + w
+		self.x_train_t = np.transpose(self.x_train)
+	
 		while True:
 			# Get derivative of sum or squared error 
-			self.sse_grad = (w * self.x_train - self.y_train)*self.x_train + 2 * self.Lambda * np.linalg.norm(w) 
+			loss = np.dot(w, self.x_train_t) - self.y_train
+
+			self.sse_grad = np.zeros(self.x_train.shape[1])
+			for i in range(self.x_train.shape[0]):
+				# pdb.set_trace()
+				self.sse_grad += loss[0][i] * self.x_train[i] + 2 * self.Lambda * np.linalg.norm(w)
+								
+			print(np.linalg.norm(self.sse_grad))
+			# pdb.set_trace()
+
 			# update weights (parameters)
 			w -= self.Lambda * self.sse_grad
 			# check if gradient of sse converges
 			if np.linalg.norm(self.sse_grad) <= self.epsilon:
-				break		
-		
-		return w
-	
+				break
+		return w		
+			
 	def prediction(self, w):
 		count = 0
 		for i in range(len(self.y_test)):
@@ -146,7 +171,7 @@ if __name__ == '__main__':
 	# linear_regression_sklearn(x, y)
 
 	# Fit a linear model using written gradient descent algorithm
-	linear_model = Linear_Model(x, y, 0.01, 0.0)
-	linear_model.linear_regression()
+	linear_model = Linear_Model(x, y, 0.01, 0.002)
+	w = linear_model.ridge_regression()
 	
 
