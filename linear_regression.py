@@ -2,44 +2,21 @@
 
 '''
 Author : Yi Herng Ong
-Purpose : Linear regression practice using a dataset regarding Airbnb from Kaggle.com
+Purpose : Linear regression analysis
 '''
 
 
 import pandas as pd 
 import numpy as np
 import os, sys
-import argparse
 from sklearn.linear_model import LinearRegression
 from sklearn.model_selection import train_test_split
 import pdb
 import matplotlib.pyplot as plt
+import math
 
-# Import dataset
-def import_data(file):
-	data = pd.read_csv(file)
-	cols = set(data.columns) # extract all column name of dataset
-	# print(cols)
-	cols.remove("Chance of Admit ") # remove chance of admit because we are going to predict chance of admit	
-	cols.remove("Serial No.") # remove serial no. because there is no correlation
-	# x = np.array(data["GRE Score"]) # passed in only GRE score set as inputs
-	x = np.array(data[cols]) # passed in all columns 
-	norm_x = normalization(x)
-	# x = np.transpose(x)
-	# norm_x = x / np.linalg.norm(x, ord=1, axis=1, keepdims=True)
-	y = np.array(data["Chance of Admit "]) # get label data "price"
-	# pdb.set_trace()
-	return norm_x, y
 
-def normalization(x):
-	norm_x = x[:]
-	for i in range(norm_x.shape[1]):
-		feature_max = np.amax(norm_x[:, i])
-		feature_min = np.amin(norm_x[:, i])
-		for j in range(norm_x.shape[0]):
-			norm_x[j, i] = (norm_x[j, i] - feature_min) / (feature_max - feature_min)
-	
-	return norm_x
+
 '''
 Simple linear regression that import LinearRegression Model from sklearn library
 '''
@@ -81,20 +58,59 @@ def linear_regression_sklearn(x, y):
 	plt.show()
 
 
-
+'''
+Linear Models: Linear regression, ridge regression model etc.
+'''
 class Linear_Model():
-	def __init__(self, x, y, epsilon=0.5, Lambda=0.01):
-		# x is (M, N) matrix, y is (1, N) matrix
-		self.x_train, self.x_test, self.y_train, self.y_test = train_test_split(x, y, test_size=1/3, random_state=0)
+	def __init__(self, filename, epsilon=0.5, Lambda=0.001):
 		self.epsilon = epsilon
 		self.Lambda = Lambda
+		self.filename = filename
+		self.data = pd.read_csv(self.filename)
 
+	'''
+	Import dataset, set data for training and testing
+	'''
+	def preprocess(self, prediction_feature):
+		# pdb.set_trace()
+		self.drop_features(["Serial No."]) # need to change based on data
+		cols = set(self.data.columns) # extract all column name of dataset
+		cols.remove(prediction_feature) # remove prediction feature for x
+		x = self.normalization(np.array(self.data[cols])) # normalize data
+		y = np.array(self.data[prediction_feature]) # create label
+		self.convert_train_test_data(x, y)
+		self.prediction_feature = prediction_feature
+		
+	'''
+	Erase unnecessary columns
+	'''
+	def drop_features(self, features):
+		self.data.drop(features, axis=1, inplace=True)
+
+	'''
+	Split dataset into training and test dataset
+	'''
+	def convert_train_test_data(self, x, y):
+		# x is (M, N) matrix, y is (1, N) matrix
+		self.x_train, self.x_test, self.y_train, self.y_test = train_test_split(x, y, test_size=1/3, random_state=0)
+	
+	'''
+	Normalize data between 0 and 1
+	'''
+	def normalization(self, x):
+		for i in range(x.shape[1]):
+			feature_max = np.amax(x[:, i])
+			feature_min = np.amin(x[:, i])
+			for j in range(x.shape[0]):
+				x[j, i] = (x[j, i] - feature_min) / (feature_max - feature_min)
+		return x
+
+	
 	'''
 	Linear regression without regularization term
 	'''	
 	def linear_regression(self):
 		# initialize w with random numbers using numpy
-		
 		w = np.random.rand(1, self.x_train.shape[1])
 		ws = np.zeros((self.x_train.shape[0], self.x_train.shape[1]))
 		ws = ws + w
@@ -106,18 +122,15 @@ class Linear_Model():
 
 			self.sse_grad = np.zeros(self.x_train.shape[1])
 			for i in range(self.x_train.shape[0]):
-				# pdb.set_trace()
-				self.sse_grad += loss[0][i] * self.x_train[i]
-								
-			# print(np.linalg.norm(self.sse_grad))
-			# pdb.set_trace()
+				self.sse_grad += (loss[0][i] * self.x_train[i])
 
 			# update weights (parameters)
 			w -= self.Lambda * self.sse_grad
 			# check if gradient of sse converges
 			if np.linalg.norm(self.sse_grad) <= self.epsilon:
 				break
-		return w
+		self.w = w		
+
 		
 	'''
 	Ridge regression (L2 regularization)
@@ -133,45 +146,37 @@ class Linear_Model():
 		while True:
 			# Get derivative of sum or squared error 
 			loss = np.dot(w, self.x_train_t) - self.y_train
-
 			self.sse_grad = np.zeros(self.x_train.shape[1])
 			for i in range(self.x_train.shape[0]):
-				# pdb.set_trace()
-				self.sse_grad += loss[0][i] * self.x_train[i] + 2 * self.Lambda * np.linalg.norm(w)
-								
-			print(np.linalg.norm(self.sse_grad))
-			# pdb.set_trace()
+				self.sse_grad += (loss[0][i] * self.x_train[i]) + (2*self.Lambda * np.linalg.norm(w)) # add the L2 regularization
 
 			# update weights (parameters)
 			w -= self.Lambda * self.sse_grad
 			# check if gradient of sse converges
 			if np.linalg.norm(self.sse_grad) <= self.epsilon:
 				break
-		return w		
-			
-	def prediction(self, w):
-		count = 0
-		for i in range(len(self.y_test)):
-			pred = w * self.x_test[i]
-			if abs(pred - self.y_test[i]) < 0.01:
-				count += 1
-			
-		return count / len(self.y_test)
-			
-
-if __name__ == '__main__':
-	parser = argparse.ArgumentParser()
-	parser.add_argument("--dataset", default="Admission_Predict.csv") # dataset that you want to extract the data from
-	args = parser.parse_args()
-
-	file = args.dataset
-	x, y = import_data(file)
-
-	# Fit a linear model using sklearn
-	# linear_regression_sklearn(x, y)
-
-	# Fit a linear model using written gradient descent algorithm
-	linear_model = Linear_Model(x, y, 0.01, 0.002)
-	w = linear_model.ridge_regression()
+		self.w = w		
 	
+	'''
+	Test model
+	'''
+	def standard_error_regression(self):
+		error = 0
+		y_pred = []
+		for i in range(len(self.y_test)):
+			pred = np.dot(self.w[0], self.x_test[i])
+			y_pred.append(pred)
+			error += (pred - self.y_test[i])**2 # use sum of squared error
+		print("Standard Deviation of Y", math.sqrt(error**2 / (len(self.y_test))) )
+		print("Standard Error of the Model", math.sqrt(error**2 / (len(self.y_test) - 1)) )
+		self.plot(y_pred)	
+
+	def plot(self, y_pred):
+		x = np.arange(0, self.x_test.shape[0])
+		plt.scatter(x, self.y_test, color="red")
+		plt.plot(x, y_pred, color="blue")
+		plt.title("Visualize test dataset")
+		plt.xlabel("Features")
+		plt.ylabel(self.prediction_feature)
+		plt.show()
 
