@@ -13,38 +13,37 @@ import matplotlib.pyplot as plt
 import math
 
 class Logistic_regression(object):
-    def __init__(self, x, y, learning_rate):
-        self.x = x
-        self.y = y
-        self.row = x.shape[0]
-        self.col = x.shape[1]
-        self.lr = learning_rate
-
-	def convert_train_test_data(self, x, y):
-		# x is (M, N) matrix, y is (1, N) matrix
-		self.x_train, self.x_test, self.y_train, self.y_test = train_test_split(x, y, test_size=1/3, random_state=0)
+    def __init__(self, x_train, x_test, y_train, y_test, prediction_feature, Lambda=1):
+        self.x_train = x_train
+        self.x_test = x_test
+        self.y_train = y_train
+        self.y_test = y_test
+        self.lr = Lambda # learning rate
+        self.prediction_feature = prediction_feature
     
     def activation_function(self, z):
         return 1 / (1 + np.exp(-z))
 
-    def train(self):
+    def train(self, steps=50000):
         w = np.random.rand(self.x_train.shape[1])
-        while True:
+        for _ in range(steps):
             # predict train x
-            predictions = self.activation_function(np.dot(w, self.x_train)) # may need transpose
-            # determine cost using Cross Entropy function
-            cost_1 = -self.y_train * np.log(predictions) # calc error when label = 1
-            cost_0 = -(1-self.y_train) * np.log(1-predictions) # calc error when label = 0   
-            sum_cost = cost_1 + cost_0
-            cost_avg = sum(sum_cost) / len(self.y_train)
+            # pdb.set_trace()
+            predictions = self.activation_function(np.dot(self.x_train, w))
+            # determine cost using Cross Entropy Error
+            # cost_1 = -self.y_train * np.log(predictions) # calc error when label = 1
+            # cost_0 = -(1-self.y_train) * np.log(1-predictions) # calc error when label = 0   
+            # sum_cost = cost_1 + cost_0
+            # cost_avg = sum(sum_cost) / len(self.y_train)
+            # gradient of the error
+            cost = predictions - self.y_train
+            
             # update weight
-            grad = np.dot(np.transpose(self.x_train), predictions - self.y_train)
-            grad /= self.x_train[1]
-            grad *= self.lr            
+            grad = np.dot(self.x_train.T, cost)
+            grad /= self.x_train.shape[1]
+            grad *= self.lr 
             w -= grad
-            print("cost:", cost_avg)
-            if cost_avg < 0.1:
-                break
+            # print("cost:", cost)
         self.w = w
 
     def prediction(self):
