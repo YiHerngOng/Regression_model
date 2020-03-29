@@ -62,50 +62,15 @@ def linear_regression_sklearn(x, y):
 Linear Models: Linear regression, ridge regression model etc.
 '''
 class Linear_Model():
-	def __init__(self, filename, epsilon=0.5, Lambda=0.001):
+	def __init__(self, x_train, x_test, y_train, y_test, prediction_feature, epsilon=0.5, Lambda=0.001):
 		self.epsilon = epsilon
 		self.Lambda = Lambda
-		self.filename = filename
-		self.data = pd.read_csv(self.filename)
-
-	'''
-	Import dataset, set data for training and testing
-	'''
-	def preprocess(self, prediction_feature):
-		# pdb.set_trace()
-		self.drop_features(["Serial No."]) # need to change based on data
-		cols = set(self.data.columns) # extract all column name of dataset
-		cols.remove(prediction_feature) # remove prediction feature for x
-		x = self.normalization(np.array(self.data[cols])) # normalize data
-		y = np.array(self.data[prediction_feature]) # create label
-		self.convert_train_test_data(x, y)
+		self.x_train = x_train
+		self.y_train = y_train
+		self.x_test = x_test
+		self.y_test = y_test
 		self.prediction_feature = prediction_feature
-		
-	'''
-	Erase unnecessary columns
-	'''
-	def drop_features(self, features):
-		self.data.drop(features, axis=1, inplace=True)
 
-	'''
-	Split dataset into training and test dataset
-	'''
-	def convert_train_test_data(self, x, y):
-		# x is (M, N) matrix, y is (1, N) matrix
-		self.x_train, self.x_test, self.y_train, self.y_test = train_test_split(x, y, test_size=1/3, random_state=0)
-	
-	'''
-	Normalize data between 0 and 1
-	'''
-	def normalization(self, x):
-		for i in range(x.shape[1]):
-			feature_max = np.amax(x[:, i])
-			feature_min = np.amin(x[:, i])
-			for j in range(x.shape[0]):
-				x[j, i] = (x[j, i] - feature_min) / (feature_max - feature_min)
-		return x
-
-	
 	'''
 	Linear regression without regularization term
 	'''	
