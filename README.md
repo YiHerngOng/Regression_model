@@ -8,3 +8,7 @@ pip install -r requirements.txt
 ```
 
 ## Linear Regression
+
+## Logistic Regression
+
+## Poisson Regression
